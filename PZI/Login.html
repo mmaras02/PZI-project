@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles/styles.css" />
+    <link rel="stylesheet" href="styles/fontawesome-free-6.2.1-web/css/all.css">
+    <title>Management PTO</title>
+</head>
+<body>
+    <div class="login">
+            <div class="login-container">
+                <h2>Login</h2>
+                <div id="username-email-container" class="login-info">
+                    <i class="fa-solid fa-user info-icon"></i>
+                    <input type="text" id="LoginEmail"  placeholder="Username/Email" name="uname" required class="info-box">
+                </div>
+
+                <div id="password-container" class="login-info">
+                    <i class="fa-solid fa-lock info-icon"></i>
+                    <input type="password" id="LoginPassword" placeholder="Password" name="psw" required class="info-box">
+                </div>
+                
+                <p><a href="#" id="forgot-psswrd">Forgot your password?</a></p>
+                <button id="login-button" class="action-button" onclick="ValidateLogin()">LOGIN</button>
+            <p id="signup-text">Don't have an account? <a href="#" id="signup-link">Signup!</a></p>
+            </div>
+    </div>
+    
+    <script src="scripts/login.js"></script>
+</body>
+</html>
