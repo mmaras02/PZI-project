@@ -55,7 +55,7 @@ function displayEmployeeInfo(user) {
   console.log("help");
   const userInfo = document.getElementById("employee-info");
   userInfo.innerHTML = `
-      <p>Username: ${user.username}</p>
+      <p>Name: ${user.name}</p>
       <p>Email: ${user.email}</p>
       <p>Address: ${user.address.street}, ${user.address.city}</p>
       <p>Phone: ${user.phone}</p>
@@ -63,6 +63,7 @@ function displayEmployeeInfo(user) {
   `;
   selectedEmployeeId=user.id;
   console.log(selectedEmployeeId);
+  DisplayPTOData(selectedEmployeeId);
 }
 
 
@@ -136,7 +137,7 @@ const manipulate1 = () => {
             ptoStartDate = new Date(startYear, startMonth, parseInt(dateElement.textContent));
             console.log(`Selected start date: ${ptoStartDate}`);
             //showChoosenDates();
-            document.getElementById("start-date").textContent=` PTO Start Date: ${ptoStartDate ? ptoStartDate.toLocaleDateString() : ''}`;
+            document.getElementById("start-date").innerHTML=` PTO Start Date: ${ptoStartDate ? ptoStartDate.toLocaleDateString() : ''}`;
         });
       });
 }
@@ -174,7 +175,7 @@ const manipulate2 = () => {
             ptoEndDate = new Date(endYear, endMonth, parseInt(dateElement.textContent));
             console.log(`Selected end date: ${ptoEndDate}`);
             //showChoosenDates();
-            document.getElementById("end-date").textContent=` PTO End Date: ${ptoEndDate ? ptoEndDate.toLocaleDateString() : ''}`;
+            document.getElementById("end-date").innerHTML=` PTO End Date: ${ptoEndDate ? ptoEndDate.toLocaleDateString() : ''}`;
            
         });
       });
@@ -217,10 +218,163 @@ function CheckAndSubmit(){
     return;
   }
   if(ptoStartDate>ptoEndDate){
-    alert("Start date can't be after end date");
+    alert("Start date can't be after the end date");
     return;
   }
   else{
-    alert("Success");
+    alert("PTO date successfully saved!");
+    StoreData();
+    //CheckDateSeason();
+    DisplayPTOData(selectedEmployeeId);
   }
 }
+
+function StoreData(){
+  const datesArray = [ptoStartDate.toLocaleDateString(),ptoEndDate.toLocaleDateString()];
+  //localStorage.setItem(selectedEmployeeId, JSON.stringify(userArray)); -->only saves one
+
+  const userData = JSON.parse(localStorage.getItem(selectedEmployeeId)) || [];
+  userData.push(datesArray);
+  localStorage.setItem(selectedEmployeeId, JSON.stringify(userData));
+  console.log(userData);
+}
+
+ 
+function handleXIconClick(e)
+{
+  console.log("deleting...");
+  const clickedXIcon=e.currentTarget;
+  const card=clickedXIcon.parentElement;
+  card.remove();
+}
+
+
+
+function DisplayPTOData(selectedEmployeeId){
+
+  //need to create a div that containes picture of the season and inside date for that time period written
+  //season pictures (2 relative links, 2 apsolute links)
+  //logged user can delete PTO clicking on x in the corner of the picture
+  //checks pair-dates and determines whether they are in the past current or upcoming  
+
+
+  let allDates=JSON.parse(localStorage.getItem(selectedEmployeeId));
+  console.log("all dates:",allDates);
+  //const displayContainer=document.getElementById("display-container");
+  const pastContainer=document.getElementById("past-container");
+  const currentContainer=document.getElementById("current-container");
+  const futureContainer=document.getElementById("future-container");
+  //displayContainer.innerHTML = '';
+  pastContainer.innerHTML = '';
+  currentContainer.innerHTML = '';
+  futureContainer.innerHTML = '';
+
+  allDates.forEach((date) => {
+    console.log("date pairs:",date);
+
+    const startPTO=new Date(date[0]);
+    const endPTO=new Date(date[1]);
+    console.log("stratttting",startPTO);
+
+    const season=CheckDateSeason(startPTO);
+    console.log(season);
+
+    let timePeriod=TimePeriod(startPTO,endPTO);
+    console.log(timePeriod);
+
+    const picture=GetPicture(season);
+    /*<img src="${picture}"></img>*/
+
+    //creating big picture div
+    const newElement=document.createElement('div');
+    newElement.className="picture-container";
+    newElement.style.backgroundImage=`url("${picture}")`;
+    newElement.innerHTML=`
+      <i class="fa fa-times x-icon"></i>
+      <div id="overlay">
+        <p>${date[0]} - ${date[1]}</p>
+      </div>
+    `;
+
+    if(timePeriod==="past"){
+      console.log("helop");
+      pastContainer.appendChild(newElement);
+      //document.getElementById('past-title').style.display = 'block';
+    }
+    else if(timePeriod==="current"){
+      currentContainer.appendChild(newElement);
+      //document.getElementById('current-title').style.display = 'block';
+    }
+    else{
+      futureContainer.appendChild(newElement);
+      //document.getElementById('future-title').style.display = 'block';
+    }
+  });
+
+
+  const xIcons = document.querySelectorAll(".x-icon");
+  xIcons.forEach(xIcon => {
+    xIcon.addEventListener("click", handleXIconClick);
+  });
+
+  document.getElementById('past-title').style.display = pastContainer.childElementCount > 0 ? 'block' : 'none';
+  document.getElementById('current-title').style.display = currentContainer.childElementCount > 0 ? 'block' : 'none';
+  document.getElementById('future-title').style.display = futureContainer.childElementCount > 0 ? 'block' : 'none';
+}
+
+function CheckDateSeason(startDate){
+
+  const startMonth = startDate.getMonth();
+  const startDay = startDate.getDay();
+
+  // December 21st - March 20th
+  if ((startMonth === 11 && startDay >= 21) || startMonth === 0 || startMonth===1 || (startMonth === 2 && startDay <= 20)) {
+    return "winter";
+  }
+  // March 21st - June 20th 
+  else if ((startMonth === 2 && startDay >= 21) || startMonth === 3 || startMonth===4 || (startMonth === 5 && startDay <= 20)) {
+    return "spring";
+  }
+  //June 21st - 22nd September
+  else if ((startMonth === 5 && startDay >= 21) || startMonth === 6 || startMonth===7 || (startMonth === 8 && startDay <= 20)) {
+    return "summer";
+  }
+  // September 21st - December 20th 
+  else if ((startMonth === 8 && startDay >= 21) || startMonth === 9 || startMonth===10 || (startMonth === 11 && startDay <= 20)) {
+    return "autumn";
+  } else {
+    return "invalid date range";
+  }
+}
+
+function GetPicture(season){
+  switch(season){
+    case "winter":
+      return "images/winter.jpg";
+    case "spring":
+      return "images/spring.jpg";
+    case "summer":
+      return "images/summer.jpg";
+    case "autumn":
+      return "images/autumn.jpg";
+    default:
+      return;
+  }
+}
+
+function TimePeriod(startPTO,endPTO){
+  //calculate if it is current past or present
+  const currentDate = new Date();
+
+  // Compare the input date with the current date
+  if (startPTO < currentDate && endPTO<currentDate) {
+    return "past";
+  }
+  else if(startPTO<currentDate && endPTO>currentDate){
+    return "current";
+  } 
+  else{
+    return "future";
+  }
+}
+
