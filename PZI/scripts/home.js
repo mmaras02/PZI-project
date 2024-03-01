@@ -1,6 +1,9 @@
 let users;
 let selectedEmployeeId;
-displayEmployees();
+let pastContainer=document.getElementById("past-container");
+let currentContainer=document.getElementById("current-container");
+let futureContainer=document.getElementById("future-container");
+DisplayEmployees();
 
 async function fetchData() {
     try {
@@ -18,44 +21,43 @@ async function fetchData() {
       const data = await response.json();
       return data;
 
-    } catch (error) {
+  } catch (error) {
       console.error('Error:', error);
     }
-  }
+}
 
-async function displayEmployees()
+async function DisplayEmployees()
 {
     const usersList=document.getElementById("user-display-container");
-    console.log("helooo");
     users=await fetchData();
+
     if(users)
     {
         users.forEach(user => {
             const newElement=document.createElement('div');
             newElement.className="user-container";
             newElement.innerHTML=`
-              <p>Username: ${user.username}</p>
-              <p>Email: ${user.email}</p>
+              <p> ${user.name}</p>
+              <p> ${user.email}</p>
             `;
-            console.log("helooo");
-            newElement.addEventListener('click', function(){displayEmployeeInfo(user);});
+            newElement.addEventListener('click', function(){DisplayEmployeeInfo(user);});
             usersList.appendChild(newElement);
-        
         });
     }
 }
 
-function logoutButton(){
+function LogoutButton(){
     document.cookie="";
     alert("You have been logged out!");
     window.location.href="./Login.html";
 }
 
-function displayEmployeeInfo(user) {
+function DisplayEmployeeInfo(user) {
   console.log("help");
   const userInfo = document.getElementById("employee-info");
   userInfo.innerHTML = `
       <p>Name: ${user.name}</p>
+      <p>Username: ${user.username}</p>
       <p>Email: ${user.email}</p>
       <p>Address: ${user.address.street}, ${user.address.city}</p>
       <p>Phone: ${user.phone}</p>
@@ -66,9 +68,7 @@ function displayEmployeeInfo(user) {
   DisplayPTOData(selectedEmployeeId);
 }
 
-
 /*CALENDAR */
-
 let date1 = new Date();
 let startYear = date1.getFullYear();
 let startMonth = date1.getMonth();
@@ -124,13 +124,13 @@ const manipulate1 = () => {
     day1.innerHTML = lit;
 
 
-    //just trying
+    //li element when click becomes ptoStartDate
     const dateElements = day1.querySelectorAll("li");
     dateElements.forEach(dateElement => {
         dateElement.addEventListener("click", () => {
 
-            day1.querySelectorAll(".selected").forEach(el => {
-                el.classList.remove("selected");
+            day1.querySelectorAll(".selected").forEach(element => {
+                element.classList.remove("selected");
             });
 
             dateElement.classList.add("selected");
@@ -139,7 +139,7 @@ const manipulate1 = () => {
             //showChoosenDates();
             document.getElementById("start-date").innerHTML=` PTO Start Date: ${ptoStartDate ? ptoStartDate.toLocaleDateString() : ''}`;
         });
-      });
+    });
 }
 
 const manipulate2 = () => {
@@ -161,14 +161,13 @@ const manipulate2 = () => {
     currdate2.innerText = `${months[endMonth]} ${endYear}`;
     day2.innerHTML = lit;
 
-
     //samo proba
     const dateElements1 = day2.querySelectorAll("li");
     dateElements1.forEach(dateElement => {
         dateElement.addEventListener("click", () => {
 
-            day2.querySelectorAll(".selected").forEach(el => {
-                el.classList.remove("selected");
+            day2.querySelectorAll(".selected").forEach(element => {
+                element.classList.remove("selected");
             });
 
             dateElement.classList.add("selected");
@@ -217,6 +216,10 @@ function CheckAndSubmit(){
     alert("No employees choosen!");
     return;
   }
+  if(!ptoStartDate && !ptoEndDate){
+    alert("No dates selected!");
+    return;
+  }
   if(ptoStartDate>ptoEndDate){
     alert("Start date can't be after the end date");
     return;
@@ -224,12 +227,18 @@ function CheckAndSubmit(){
   else{
     alert("PTO date successfully saved!");
     StoreData();
-    //CheckDateSeason();
     DisplayPTOData(selectedEmployeeId);
+
+    //Need to add selected li to be removed
+    const selectedElements = document.querySelectorAll(".selected");
+    selectedElements.forEach(element => {
+      element.classList.remove("selected");
+    });
   }
 }
 
 function StoreData(){
+  
   const datesArray = [ptoStartDate.toLocaleDateString(),ptoEndDate.toLocaleDateString()];
   //localStorage.setItem(selectedEmployeeId, JSON.stringify(userArray)); -->only saves one
 
@@ -239,16 +248,48 @@ function StoreData(){
   console.log(userData);
 }
 
+function HandleHiddenTitle(){
+  document.getElementById('past-title').style.display = pastContainer.childElementCount  > 0 ? 'block' : 'none';
+  document.getElementById('current-title').style.display = currentContainer.childElementCount  > 0 ? 'block' : 'none';
+  document.getElementById('future-title').style.display = futureContainer.childElementCount > 0 ? 'block' : 'none';
+}
  
 function handleXIconClick(e)
 {
   console.log("deleting...");
   const clickedXIcon=e.currentTarget;
   const card=clickedXIcon.parentElement;
+
+  console.log("parent element of card",card);
+  const child=card.children[1];
+  const dataToDelete=child.children[0].textContent;
+  console.log("this is child:", child);
+  console.log("this is data to delete:", dataToDelete);
+
+  let userData = JSON.parse(localStorage.getItem(selectedEmployeeId)) || [];
+  console.log("this is user data",userData);
+
+
+  userData=userData.filter(item=>item.join(" - ")!==dataToDelete);
+  console.log("This is new user data:",userData);
+
+  localStorage.setItem(selectedEmployeeId,JSON.stringify(userData));
+
+  /*userData.forEach(item=>{
+    if(item.join(" - ")===dataToDelete){
+      userData.remove(item);
+      console.log("somsom",userData);
+    }
+
+    console.log(item)});*/
+
+
+  document.getElementById('past-title').style.display = pastContainer.childElementCount -1 > 0 ? 'block' : 'none';
+  document.getElementById('current-title').style.display = currentContainer.childElementCount - 1 > 0 ? 'block' : 'none';
+  document.getElementById('future-title').style.display = futureContainer.childElementCount - 1 > 0 ? 'block' : 'none';
+
   card.remove();
 }
-
-
 
 function DisplayPTOData(selectedEmployeeId){
 
@@ -258,23 +299,45 @@ function DisplayPTOData(selectedEmployeeId){
   //checks pair-dates and determines whether they are in the past current or upcoming  
 
 
-  let allDates=JSON.parse(localStorage.getItem(selectedEmployeeId));
+  let allDates=JSON.parse(localStorage.getItem(selectedEmployeeId)) || [];
   console.log("all dates:",allDates);
-  //const displayContainer=document.getElementById("display-container");
-  const pastContainer=document.getElementById("past-container");
-  const currentContainer=document.getElementById("current-container");
-  const futureContainer=document.getElementById("future-container");
-  //displayContainer.innerHTML = '';
+  
   pastContainer.innerHTML = '';
   currentContainer.innerHTML = '';
   futureContainer.innerHTML = '';
+
+
+
+  /*const pastContainer=document.createElement('div');
+    pastContainer.className="display-container";
+    pastContainer.id="past-container";
+    pastContainer.innerHTML=`
+     <h3 id="past-title" class="title-container">Past PTO Dates</h3>
+    `;
+    const currentContainer=document.createElement('div');
+    currentContainer.className="display-container";
+    currentContainer.id="current-container";
+    currentContainer.innerHTML=`
+     <h3 id="current-title" class="title-container">Current PTO Dates</h3>
+    `;
+    const futureContainer=document.createElement('div');
+    futureContainer.className="display-container";
+    futureContainer.id="future-container";
+    futureContainer.innerHTML=`
+     <h3 id="future-title" class="title-container">Future PTO Dates</h3>
+    `;
+    otherContainer.appendChild(pastContainer);
+    otherContainer.appendChild(currentContainer);
+    otherContainer.appendChild(futureContainer);*/
+
+  HandleHiddenTitle();
 
   allDates.forEach((date) => {
     console.log("date pairs:",date);
 
     const startPTO=new Date(date[0]);
     const endPTO=new Date(date[1]);
-    console.log("stratttting",startPTO);
+    console.log("starting date:",startPTO);
 
     const season=CheckDateSeason(startPTO);
     console.log(season);
@@ -295,6 +358,7 @@ function DisplayPTOData(selectedEmployeeId){
         <p>${date[0]} - ${date[1]}</p>
       </div>
     `;
+
 
     if(timePeriod==="past"){
       console.log("helop");
@@ -317,15 +381,14 @@ function DisplayPTOData(selectedEmployeeId){
     xIcon.addEventListener("click", handleXIconClick);
   });
 
-  document.getElementById('past-title').style.display = pastContainer.childElementCount > 0 ? 'block' : 'none';
-  document.getElementById('current-title').style.display = currentContainer.childElementCount > 0 ? 'block' : 'none';
-  document.getElementById('future-title').style.display = futureContainer.childElementCount > 0 ? 'block' : 'none';
+  HandleHiddenTitle();
 }
 
 function CheckDateSeason(startDate){
 
   const startMonth = startDate.getMonth();
-  const startDay = startDate.getDay();
+  const startDay = startDate.getDate();
+  console.log("this is startDay",startDate.getDate());
 
   // December 21st - March 20th
   if ((startMonth === 11 && startDay >= 21) || startMonth === 0 || startMonth===1 || (startMonth === 2 && startDay <= 20)) {
@@ -352,9 +415,9 @@ function GetPicture(season){
     case "winter":
       return "images/winter.jpg";
     case "spring":
-      return "images/spring.jpg";
+      return "https://wallpapers.com/images/hd/spring-desktop-sakura-trees-park-xgaf5iia8c63amqz.jpg";
     case "summer":
-      return "images/summer.jpg";
+      return "https://picstatio.com/large/izgjhw/beach-morning-sea.jpg";
     case "autumn":
       return "images/autumn.jpg";
     default:
@@ -363,10 +426,8 @@ function GetPicture(season){
 }
 
 function TimePeriod(startPTO,endPTO){
-  //calculate if it is current past or present
   const currentDate = new Date();
 
-  // Compare the input date with the current date
   if (startPTO < currentDate && endPTO<currentDate) {
     return "past";
   }
