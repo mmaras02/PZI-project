@@ -1,4 +1,4 @@
-let users;
+let employees;
 let selectedEmployeeId;
 let pastContainer=document.getElementById("past-container");
 let currentContainer=document.getElementById("current-container");
@@ -28,21 +28,26 @@ async function fetchData() {
 
 async function DisplayEmployees()
 {
-    const usersList=document.getElementById("user-display-container");
-    users=await fetchData();
+    const employeeList=document.getElementById("user-display-container");
 
-    if(users)
-    {
-        users.forEach(user => {
-            const newElement=document.createElement('div');
-            newElement.className="user-container";
-            newElement.innerHTML=`
-              <p> ${user.name}</p>
-              <p> ${user.email}</p>
-            `;
-            newElement.addEventListener('click', function(){DisplayEmployeeInfo(user);});
-            usersList.appendChild(newElement);
-        });
+    try {
+      employees=await fetchData();
+      if(employees)
+      {
+        employees.forEach(employee => {
+              const newElement=document.createElement('div');
+              newElement.className="employee-container";
+              newElement.innerHTML=`
+                <p> ${employee.name}</p>
+                <p> ${employee.email}</p>
+              `;
+              newElement.addEventListener('click', function(){DisplayEmployeeInfo(employee);});
+              employeeList.appendChild(newElement);
+          });
+      }
+      
+    } catch (error) {
+      console.log("Error fetching data!");
     }
 }
 
@@ -52,18 +57,17 @@ function LogoutButton(){
     window.location.href="./Login.html";
 }
 
-function DisplayEmployeeInfo(user) {
-  console.log("help");
+function DisplayEmployeeInfo(employee) {
   const userInfo = document.getElementById("employee-info");
   userInfo.innerHTML = `
-      <p>Name: ${user.name}</p>
-      <p>Username: ${user.username}</p>
-      <p>Email: ${user.email}</p>
-      <p>Address: ${user.address.street}, ${user.address.city}</p>
-      <p>Phone: ${user.phone}</p>
-      <p>Website: ${user.website}</p>
+      <p>Name: ${employee.name}</p>
+      <p>Username: ${employee.username}</p>
+      <p>Email: ${employee.email}</p>
+      <p>Address: ${employee.address.street}, ${employee.address.city}</p>
+      <p>Phone: ${employee.phone}</p>
+      <p>Website: ${employee.website}</p>
   `;
-  selectedEmployeeId=user.id;
+  selectedEmployeeId=employee.id;
   console.log(selectedEmployeeId);
   DisplayPTOData(selectedEmployeeId);
 }
@@ -123,8 +127,6 @@ const manipulate1 = () => {
     currdate1.innerText = `${months[startMonth]} ${startYear}`;
     day1.innerHTML = lit;
 
-
-    //li element when click becomes ptoStartDate
     const dateElements = day1.querySelectorAll("li");
     dateElements.forEach(dateElement => {
         dateElement.addEventListener("click", () => {
@@ -136,7 +138,6 @@ const manipulate1 = () => {
             dateElement.classList.add("selected");
             ptoStartDate = new Date(startYear, startMonth, parseInt(dateElement.textContent));
             console.log(`Selected start date: ${ptoStartDate}`);
-            //showChoosenDates();
             document.getElementById("start-date").innerHTML=` PTO Start Date: ${ptoStartDate ? ptoStartDate.toLocaleDateString() : ''}`;
         });
     });
@@ -161,7 +162,6 @@ const manipulate2 = () => {
     currdate2.innerText = `${months[endMonth]} ${endYear}`;
     day2.innerHTML = lit;
 
-    //samo proba
     const dateElements1 = day2.querySelectorAll("li");
     dateElements1.forEach(dateElement => {
         dateElement.addEventListener("click", () => {
@@ -173,7 +173,6 @@ const manipulate2 = () => {
             dateElement.classList.add("selected");
             ptoEndDate = new Date(endYear, endMonth, parseInt(dateElement.textContent));
             console.log(`Selected end date: ${ptoEndDate}`);
-            //showChoosenDates();
             document.getElementById("end-date").innerHTML=` PTO End Date: ${ptoEndDate ? ptoEndDate.toLocaleDateString() : ''}`;
            
         });
@@ -205,42 +204,40 @@ navigationIcons2.forEach(icon => {
   });
 });
 
-/*function showChoosenDates(){
-  document.getElementById("start-date").textContent=` PTO Start Date: ${startDate ? startDate.toLocaleDateString() : ''}`;
-  document.getElementById("end-date").textContent=` PTO End Date: ${endDate ? endDate.toLocaleDateString() : ''}`;
-}*/
-
 function CheckAndSubmit(){
 
   if(selectedEmployeeId===undefined){
     alert("No employees choosen!");
+    RemoveDates();
     return;
   }
-  if(!ptoStartDate && !ptoEndDate){
-    alert("No dates selected!");
+  if(ptoStartDate===undefined || ptoEndDate===undefined){
+    alert("You are missing a date!");
+    RemoveDates();
     return;
   }
   if(ptoStartDate>ptoEndDate){
     alert("Start date can't be after the end date");
+    RemoveDates();
     return;
   }
   else{
     alert("PTO date successfully saved!");
     StoreData();
     DisplayPTOData(selectedEmployeeId);
-
-    //Need to add selected li to be removed
-    const selectedElements = document.querySelectorAll(".selected");
-    selectedElements.forEach(element => {
-      element.classList.remove("selected");
-    });
+    RemoveDates();
   }
 }
 
+function RemoveDates(){
+  const selectedElements = document.querySelectorAll(".selected");
+    selectedElements.forEach(element => {
+      element.classList.remove("selected");
+    });
+}
+
 function StoreData(){
-  
   const datesArray = [ptoStartDate.toLocaleDateString(),ptoEndDate.toLocaleDateString()];
-  //localStorage.setItem(selectedEmployeeId, JSON.stringify(userArray)); -->only saves one
 
   const userData = JSON.parse(localStorage.getItem(selectedEmployeeId)) || [];
   userData.push(datesArray);
@@ -251,38 +248,26 @@ function StoreData(){
 function HandleHiddenTitle(){
   document.getElementById('past-title').style.display = pastContainer.childElementCount  > 0 ? 'block' : 'none';
   document.getElementById('current-title').style.display = currentContainer.childElementCount  > 0 ? 'block' : 'none';
-  document.getElementById('future-title').style.display = futureContainer.childElementCount > 0 ? 'block' : 'none';
+  document.getElementById('future-title').style.display = futureContainer.childElementCount  > 0 ? 'block' : 'none';
 }
  
 function handleXIconClick(e)
 {
   console.log("deleting...");
+
   const clickedXIcon=e.currentTarget;
   const card=clickedXIcon.parentElement;
 
   console.log("parent element of card",card);
   const child=card.children[1];
   const dataToDelete=child.children[0].textContent;
-  console.log("this is child:", child);
-  console.log("this is data to delete:", dataToDelete);
 
   let userData = JSON.parse(localStorage.getItem(selectedEmployeeId)) || [];
-  console.log("this is user data",userData);
-
 
   userData=userData.filter(item=>item.join(" - ")!==dataToDelete);
   console.log("This is new user data:",userData);
 
   localStorage.setItem(selectedEmployeeId,JSON.stringify(userData));
-
-  /*userData.forEach(item=>{
-    if(item.join(" - ")===dataToDelete){
-      userData.remove(item);
-      console.log("somsom",userData);
-    }
-
-    console.log(item)});*/
-
 
   document.getElementById('past-title').style.display = pastContainer.childElementCount -1 > 0 ? 'block' : 'none';
   document.getElementById('current-title').style.display = currentContainer.childElementCount - 1 > 0 ? 'block' : 'none';
@@ -292,13 +277,6 @@ function handleXIconClick(e)
 }
 
 function DisplayPTOData(selectedEmployeeId){
-
-  //need to create a div that containes picture of the season and inside date for that time period written
-  //season pictures (2 relative links, 2 apsolute links)
-  //logged user can delete PTO clicking on x in the corner of the picture
-  //checks pair-dates and determines whether they are in the past current or upcoming  
-
-
   let allDates=JSON.parse(localStorage.getItem(selectedEmployeeId)) || [];
   console.log("all dates:",allDates);
   
@@ -306,49 +284,22 @@ function DisplayPTOData(selectedEmployeeId){
   currentContainer.innerHTML = '';
   futureContainer.innerHTML = '';
 
-
-
-  /*const pastContainer=document.createElement('div');
-    pastContainer.className="display-container";
-    pastContainer.id="past-container";
-    pastContainer.innerHTML=`
-     <h3 id="past-title" class="title-container">Past PTO Dates</h3>
-    `;
-    const currentContainer=document.createElement('div');
-    currentContainer.className="display-container";
-    currentContainer.id="current-container";
-    currentContainer.innerHTML=`
-     <h3 id="current-title" class="title-container">Current PTO Dates</h3>
-    `;
-    const futureContainer=document.createElement('div');
-    futureContainer.className="display-container";
-    futureContainer.id="future-container";
-    futureContainer.innerHTML=`
-     <h3 id="future-title" class="title-container">Future PTO Dates</h3>
-    `;
-    otherContainer.appendChild(pastContainer);
-    otherContainer.appendChild(currentContainer);
-    otherContainer.appendChild(futureContainer);*/
-
   HandleHiddenTitle();
 
   allDates.forEach((date) => {
     console.log("date pairs:",date);
 
-    const startPTO=new Date(date[0]);
-    const endPTO=new Date(date[1]);
-    console.log("starting date:",startPTO);
+    const startPTO=new Date(date[0]); 
+    const endPTO=new Date(date[1]); 
+
+    const timePeriod=TimePeriod(startPTO,endPTO);
+    console.log(timePeriod);
 
     const season=CheckDateSeason(startPTO);
     console.log(season);
 
-    let timePeriod=TimePeriod(startPTO,endPTO);
-    console.log(timePeriod);
-
     const picture=GetPicture(season);
-    /*<img src="${picture}"></img>*/
 
-    //creating big picture div
     const newElement=document.createElement('div');
     newElement.className="picture-container";
     newElement.style.backgroundImage=`url("${picture}")`;
@@ -359,22 +310,16 @@ function DisplayPTOData(selectedEmployeeId){
       </div>
     `;
 
-
     if(timePeriod==="past"){
-      console.log("helop");
       pastContainer.appendChild(newElement);
-      //document.getElementById('past-title').style.display = 'block';
     }
     else if(timePeriod==="current"){
       currentContainer.appendChild(newElement);
-      //document.getElementById('current-title').style.display = 'block';
     }
     else{
       futureContainer.appendChild(newElement);
-      //document.getElementById('future-title').style.display = 'block';
     }
   });
-
 
   const xIcons = document.querySelectorAll(".x-icon");
   xIcons.forEach(xIcon => {
